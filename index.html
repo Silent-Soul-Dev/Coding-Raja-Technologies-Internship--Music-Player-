@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music Player</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .button-transition {
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        .button-transition:hover {
+            background-color: #1e3a8a; /* Darker blue for hover */
+            transform: scale(1.05);
+        }
+        .volume-slider::-webkit-slider-thumb,
+        .progress-slider::-webkit-slider-thumb {
+            transition: background-color 0.3s;
+        }
+        .volume-slider::-webkit-slider-thumb:hover,
+        .progress-slider::-webkit-slider-thumb:hover {
+            background-color: #2563eb;
+        }
+        footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: #121212; /* Spotify's dark footer color */
+            padding: 1rem;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            border-top: 1px solid #333; /* Subtle border for separation */
+        }
+        .footer-content {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            width: 100%;
+        }
+        .cover-img {
+            width: 60px;
+            height: 60px;
+            border-radius: 0.375rem;
+            object-fit: cover;
+        }
+        .track-info {
+            flex: 2;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            text-align: center;
+            color: #b3b3b3; /* Lighter text color for track info */
+        }
+        .track-info p {
+            margin: 0;
+        }
+        .control-buttons {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .control-buttons button {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            font-size: 1.8rem; /* Increase font size for better visibility */
+            padding: 0.5rem; /* Increase padding for larger clickable area */
+        }
+        .control-buttons button:hover {
+            opacity: 0.8;
+        }
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex: 1;
+        }
+        .slider {
+            flex: 1;
+        }
+        .footer-buttons {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .currently-playing {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0.5rem 0;
+        }
+        .footer-button {
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            background-color: #3b82f6; /* Tailwind Blue-500 */
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .footer-button:hover {
+            background-color: #1d4ed8; /* Darker blue on hover */
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white font-sans flex flex-col min-h-screen">
+    <div id="app" class="container mx-auto p-4 flex-grow">
+        <h1 class="text-3xl mb-6 text-center">Music Player</h1>
+        <div class="flex flex-col md:flex-row">
+            <!-- Playlist Section -->
+            <div class="w-full md:w-1/4 mb-6 md:mb-0">
+                <h2 class="text-xl mb-2">Playlists</h2>
+                <div class="bg-gray-800 p-4 rounded">
+                    <ul id="playlists" class="list-disc pl-5">
+                        <!-- Playlists will be dynamically added here -->
+                    </ul>
+                    <button id="addPlaylist" class="mt-2 p-2 bg-blue-500 button-transition rounded" aria-label="Add new playlist">Add Playlist</button>
+                    <div class="mt-4">
+                        <label for="playlistSelect" class="block mb-2">Select Playlist to Add Current Track:</label>
+                        <select id="playlistSelect" class="p-2 bg-gray-800 rounded w-full" aria-label="Select playlist">
+                            <option value="">Select a Playlist</option>
+                            <!-- Options will be dynamically added here -->
+                        </select>
+                        <button id="addToPlaylist" class="mt-2 p-2 bg-green-500 button-transition rounded w-full" aria-label="Add current track to playlist">Add to Playlist</button>
+                    </div>
+                    <div class="mt-4">
+                        <h2 class="text-xl mb-2">Playlist Contents</h2>
+                        <ul id="playlistContents" class="list-disc pl-5">
+                            <!-- Playlist contents will be dynamically added here -->
+                        </ul>
+                        <button id="playPlaylist" class="mt-2 p-2 bg-blue-500 button-transition rounded w-full" aria-label="Play selected playlist">Play Playlist</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Music Library -->
+            <div class="w-full md:w-3/4 pl-0 md:pl-4">
+                <h2 class="text-xl mb-2">Music Library</h2>
+                <div id="musicLibrary" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Music tracks will be dynamically added here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer for currently playing track -->
+    <footer class="bg-gray-900 text-white fixed bottom-0 left-0 w-full py-3 px-4 flex flex-col gap-3">
+        <!-- Track Info and Add to Playlist Button -->
+        <div class="flex items-center justify-between">
+            <!-- Track Info -->
+            <div class="flex flex-col flex-grow">
+                <div class="flex flex-col gap-2" >
+                    <div>
+                        <p id="currentTrackTitle" class="text-lg font-semibold">No track playing</p>
+                        <p id="currentTrackArtist" class="text-sm text-gray-400">-</p>
+                    </div>
+                    <div class="flex flex-col flex-grow">
+                        <p id="volume-title" class="text-lg text-gray-400" >Volume</p>
+                        <input type="range" id="volume" class="w-40 h-1 bg-gray-700 rounded-lg cursor-pointer" aria-label="Volume level">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Add to Playlist Button -->
+            <button id="addToPlaylistFooter" class="bg-blue-500 p-3 rounded-full hover:bg-blue-400 transition-colors text-sm" aria-label="Add current track to playlist">
+                Add to Playlist
+            </button>
+        </div>
+    
+        <!-- Control Buttons and Progress Bar -->
+        <div class="flex flex-col gap-2">
+            <!-- Control Buttons -->
+            <div class="flex items-center justify-center gap-4">
+                <button id="shuffle" class="bg-green-600 p-5 w-16 rounded-full hover:bg-green-500 transition-colors" aria-label="Shuffle tracks">
+                    <i class="fas fa-random"></i>
+                </button>
+
+                <button id="prev" class="bg-gray-700 p-5 w-16 rounded-full hover:bg-gray-600 transition-colors" aria-label="Previous track">
+                    <i class="fas fa-backward"></i>
+                </button>
+
+                <button id="playPause" class="bg-blue-500 p-9 w-24 rounded-full hover:bg-blue-400 transition-colors" aria-label="Play/Pause">
+                    <i id="playPauseIcon" class="fas fa-play"></i>
+                </button>                
+
+                <button id="next" class="bg-gray-700 p-5 w-16 rounded-full hover:bg-gray-600 transition-colors" aria-label="Next track">
+                    <i class="fas fa-forward"></i>
+                </button>
+
+                <button id="repeat" class="bg-green-600 p-5 w-16 rounded-full hover:bg-green-500 transition-colors" aria-label="Repeat track">
+                    <i class="fas fa-repeat"></i>
+                </button>
+            </div>
+    
+            <!-- Progress and Volume Sliders -->
+            <div class="flex items-center gap-2">
+                <div class="flex-1">
+                    <input type="range" id="progress" class="w-full h-1 bg-gray-700 rounded-lg cursor-pointer" aria-label="Track progress">
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://kit.fontawesome.com/cc27284a18.js" crossorigin="anonymous"></script>
+    <script src="scripts.js"></script>
+</body>
+</html>
